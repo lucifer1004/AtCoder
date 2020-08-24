@@ -1,5 +1,1 @@
-s = input()
-cnt = 0
-for c in s:
-    cnt += int(c)
-print('Yes' if cnt % 9 == 0 else 'No')
+print('Yes' if sum(map(int, input())) % 9 == 0 else 'No')
