@@ -12,12 +12,12 @@ else:
         if d >= ans:
             break
         ans = min(ans, d + abs(u - X))
+        if u <= X:
+            continue
         if u % 2 == 0:
             if u // 2 not in vis:
                 vis.add(u // 2)
                 dq.append((u // 2, d + 1))
-            else:
-                pass
         else:
             if u + 1 not in vis:
                 vis.add(u + 1)
