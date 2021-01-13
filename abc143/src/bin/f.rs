@@ -20,7 +20,7 @@ fn main() {
     }
     acc[0] = 0;
     for i in 1..=n {
-        acc[i] = acc[i - 1] + acc[i];
+        acc[i] += acc[i - 1];
     }
 
     let mut ans = vec![0usize; n + 1];
