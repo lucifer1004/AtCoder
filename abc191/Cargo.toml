@@ -1,0 +1,13 @@
+[package]
+name = "abc191"
+version = "0.1.0"
+authors = ["Gabriel Wu <qqbbnease1004@126.com>"]
+edition = "2018"
+
+# dependencies added to new project
+[dependencies]
+proconio = "0.4"
+
+[profile.release]
+lto = true
+panic = 'abort'
