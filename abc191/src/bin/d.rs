@@ -35,7 +35,7 @@ fn main() {
     for i in (y - r + offset) / 10000 - offset_s..=(y + r - 1 + offset) / 10000 + 1 - offset_s {
         let h = y - i * 10000;
 
-        let mut lo = -offset_s;
+        let mut lo = x - r;
         let mut hi = x;
 
         while lo <= hi {
@@ -50,7 +50,7 @@ fn main() {
         let left = (lo - 1 + offset) / 10000 + 1 - offset_s;
 
         lo = x;
-        hi = offset_s;
+        hi = x + r;
 
         while lo <= hi {
             let mid = (lo + hi) / 2;
