@@ -39,4 +39,6 @@
 # End of https://www.gitignore.io/api/c++
 
 .vscode
+.idea
 tmp
+target

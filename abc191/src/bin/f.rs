@@ -19,19 +19,19 @@ fn main() {
     let lo = *a.iter().min().unwrap();
 
     for i in 0..n {
-        let mut j = 1usize;
-        while j * j <= a[i] {
+        for j in 1..lo {
+            if j * j > a[i] {
+                break;
+            }
+
             if a[i] % j == 0 {
-                if j < lo {
-                    let original = *factors.entry(j).or_insert(a[i]);
-                    factors.insert(j, gcd(original, a[i]));
-                }
+                let original = *factors.entry(j).or_insert(a[i]);
+                factors.insert(j, gcd(original, a[i]));
                 if a[i] / j < lo {
                     let original = *factors.entry(a[i] / j).or_insert(a[i]);
                     factors.insert(a[i] / j, gcd(original, a[i]));
                 }
             }
-            j += 1;
         }
     }
 
