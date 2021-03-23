@@ -1,4 +1,4 @@
-# AtCoder Beginner Contest 149
+# AtCoder Beginner Contest 150
 
 - [x] A
 - [x] B
