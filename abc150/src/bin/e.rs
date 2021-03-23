@@ -71,7 +71,7 @@ fn main() {
     c.reverse();
 
     let mut two = ModInt::ONE;
-    for i in 1..=n * 2 - 2 {
+    for _ in 1..=n * 2 - 2 {
         two = two * ModInt::TWO;
     }
 
