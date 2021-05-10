@@ -1,0 +1,13 @@
+[package]
+name = "arc118"
+version = "0.1.0"
+edition = "2018"
+
+# dependencies added to new project
+[dependencies]
+petgraph = "0.5"
+proconio = { version = "0.4", features = ["derive"] }
+
+[profile.release]
+lto = true
+panic = 'abort'
