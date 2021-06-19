@@ -15,6 +15,9 @@ impl DisjointSetUnion {
     pub fn merge(&mut self, u: usize, v: usize) {
         let ru = self.root(u);
         let rv = self.root(v);
+        if ru == rv {
+            return;
+        }
         if self.size[ru] >= self.size[rv] {
             self.parent[rv] = ru;
             self.size[ru] += self.size[rv];
