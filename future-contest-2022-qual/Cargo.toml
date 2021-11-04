@@ -6,6 +6,7 @@ edition = "2021"
 # dependencies added to new project
 [dependencies]
 proconio = "0.4"
+rand = "0.8"
 
 [profile.release]
 lto = true

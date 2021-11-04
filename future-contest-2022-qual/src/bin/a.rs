@@ -1,21 +1,31 @@
 use std::collections::{BinaryHeap, VecDeque};
+use rand::prelude::*;
 
+const MAX_ITER_TIMES: usize = 15;
+const RECALCULATE_PERIOD: i32 = 20;
+const LEARNING_RATE: f64 = 0.8;
 const MAX_POSTPONE: i32 = 7;
 const MAX_WEIGHT: usize = 1_000_000_000_000_000_000;
-const INF: i32 = 1_000_000_000;
+const INF: f64 = 1e9;
+const SKILL_LOWER: f64 = 1.0;
+const SKILL_UPPER: f64 = 80.0;
+
+fn read_str() -> String {
+    let mut buffer = String::new();
+    let stdin = std::io::stdin();
+    stdin.read_line(&mut buffer).unwrap();
+    buffer
+}
 
 fn read_line<T>() -> Vec<T>
     where
         T: std::str::FromStr,
         <T as std::str::FromStr>::Err: std::fmt::Debug,
 {
-    let mut buffer = String::new();
-    let stdin = std::io::stdin();
-    stdin.read_line(&mut buffer).unwrap();
-    buffer.trim().split(' ').map(|x| x.parse::<T>().unwrap()).collect::<Vec<_>>()
+    read_str().trim().split(' ').map(|x| x.parse::<T>().unwrap()).collect::<Vec<_>>()
 }
 
-fn topo_sort(adj: &[Vec<usize>], in_deg: &[usize]) -> Vec<usize> {
+fn topological_sort(adj: &[Vec<usize>], in_deg: &[usize]) -> Vec<usize> {
     let mut deg = in_deg.to_owned();
     let n = deg.len();
     let mut order = vec![];
@@ -40,14 +50,19 @@ fn topo_sort(adj: &[Vec<usize>], in_deg: &[usize]) -> Vec<usize> {
 }
 
 fn main() {
+    let mut rng = rand::thread_rng();
+
     let params = read_line::<usize>();
     let task_num = params[0];
     let member_num = params[1];
     let skill_num = params[2];
     let dep_num = params[3];
     let mut tasks = vec![];
-    for _ in 0..task_num {
-        tasks.push(read_line::<i32>());
+    let mut task_tendencies = vec![];
+    for i in 0..task_num {
+        tasks.push(read_line::<f64>());
+        let difficulty = tasks[i].iter().sum::<f64>();
+        task_tendencies.push(tasks[i].iter().map(|&x| x / difficulty).collect::<Vec<_>>());
     }
     let mut deps = vec![];
     for _ in 0..dep_num {
@@ -62,14 +77,15 @@ fn main() {
         in_deg[v] += 1;
     }
 
-    let order = topo_sort(&adj, &in_deg);
+    let order = topological_sort(&adj, &in_deg);
     let mut weight = vec![0usize; task_num];
     for k in (0..task_num).rev() {
         let i = order[k];
         for &j in adj[i].iter() {
-            weight[i] += weight[j] * 3 / 2;
+            weight[i] += weight[j];
             weight[i] = weight[i].min(MAX_WEIGHT);
         }
+        weight[i] = weight[i] * 3 / 2;
         weight[i] += adj[i].len();
         weight[i] = weight[i].min(MAX_WEIGHT);
     }
@@ -82,10 +98,10 @@ fn main() {
     }
 
     // Estimated skill levels of each member.
-    let mut estimate_skills = vec![vec![0; skill_num]; member_num];
+    let mut estimate_skills = vec![vec![0.0; skill_num]; member_num];
 
     // Current job assigned to each member.
-    let mut assignments = vec![(task_num, 0); member_num];
+    let mut assignments: Vec<(usize, i32)> = vec![(task_num, 0); member_num];
 
     // Number of jobs a member has been assigned to.
     let mut assigned_times = vec![0usize; member_num];
@@ -98,6 +114,8 @@ fn main() {
 
     // Date when the member is supposed to complete the previous job.
     let mut estimate_free_date = vec![0i32; member_num];
+
+    let mut records: Vec<(usize, usize, f64)> = vec![];
 
     // Current date
     let mut day = 0;
@@ -117,6 +135,52 @@ fn main() {
 
         day += 1;
 
+        // Update skill estimations via iteration.
+        if day % RECALCULATE_PERIOD == 0 {
+            let mut gradient = 1.0;
+
+            for _ in 0..MAX_ITER_TIMES {
+                records.shuffle(&mut rng);
+                for &(member_idx, task_idx, delta) in records.iter() {
+                    let estimated_delta = (0..skill_num)
+                        .map(|skill_idx|
+                            (tasks[task_idx][skill_idx] - estimate_skills[member_idx][skill_idx]).max(0.0))
+                        .sum::<f64>();
+                    if estimated_delta > delta {
+                        let need_to_inc = (estimated_delta - delta) * gradient;
+                        let mut cnt = 0.0;
+                        for skill_idx in 0..skill_num {
+                            if estimate_skills[member_idx][skill_idx] < tasks[task_idx][skill_idx] {
+                                cnt += 1.0;
+                            }
+                        }
+                        for skill_idx in 0..skill_num {
+                            if estimate_skills[member_idx][skill_idx] < tasks[task_idx][skill_idx] {
+                                estimate_skills[member_idx][skill_idx] += need_to_inc / cnt;
+                            }
+                            estimate_skills[member_idx][skill_idx] = estimate_skills[member_idx][skill_idx].min(SKILL_UPPER);
+                        }
+                    } else {
+                        let need_to_dec = (delta - estimated_delta) * gradient;
+                        let mut cnt = 0.0;
+                        for skill_idx in 0..skill_num {
+                            if estimate_skills[member_idx][skill_idx] < tasks[task_idx][skill_idx] {
+                                cnt += 1.0;
+                            }
+                        }
+                        for skill_idx in 0..skill_num {
+                            if estimate_skills[member_idx][skill_idx] < tasks[task_idx][skill_idx] {
+                                estimate_skills[member_idx][skill_idx] -= need_to_dec / cnt;
+                            }
+                            estimate_skills[member_idx][skill_idx] = estimate_skills[member_idx][skill_idx].max(SKILL_LOWER);
+                        }
+                    }
+                }
+
+                gradient *= LEARNING_RATE;
+            }
+        }
+
         for &member_idx in freed.iter() {
             let (task_idx, assigned_day) = assignments[member_idx];
 
@@ -125,14 +189,10 @@ fn main() {
                 if in_deg[v] == 0 {
                     pq.push((weight[v], v));
                 }
-
-                let delta = day - assigned_day - 1;
-                for i in 0..skill_num {
-                    let original = estimate_skills[member_idx][i];
-                    let revision = tasks[task_idx][i] - delta;
-                    estimate_skills[member_idx][i] = original.max(revision);
-                }
             }
+
+            let delta = day - assigned_day - 1;
+            records.push((member_idx, task_idx, delta as f64));
             assignments[member_idx] = (task_num, 0);
         }
 
@@ -145,10 +205,11 @@ fn main() {
             let mut best_delta = INF;
             let mut best_delta_not_free = INF;
             for member_idx in 0..member_num {
-                let mut delta = 0;
+                let mut delta = 0.0;
                 for i in 0..skill_num {
-                    delta += (tasks[task_idx][i] - estimate_skills[member_idx][i]).max(0);
+                    delta += (tasks[task_idx][i] - estimate_skills[member_idx][i]).max(0.0);
                 }
+
                 if assignments[member_idx].0 == task_num {
                     if delta < best_delta {
                         best_delta = delta;
@@ -159,14 +220,14 @@ fn main() {
                 }
             }
 
-            if remaining_postpone_chances[task_idx] > 0 && best_delta_not_free + remaining_postpone_chances[task_idx] < best_delta {
+            if remaining_postpone_chances[task_idx] > 0 && best_delta_not_free + (remaining_postpone_chances[task_idx] as f64) < best_delta {
                 remaining_postpone_chances[task_idx] -= 1;
                 postponed.push((weight[task_idx], task_idx));
                 continue;
             }
 
             assignments[best_member] = (task_idx, day);
-            estimate_free_date[best_member] = day + best_delta;
+            estimate_free_date[best_member] = day + best_delta.trunc() as i32;
             assigned_times[best_member] += 1;
             new_assignments.push((best_member, task_idx));
             free_num -= 1;
@@ -183,4 +244,3 @@ fn main() {
         println!();
     }
 }
-
