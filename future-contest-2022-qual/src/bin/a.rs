@@ -1,5 +1,7 @@
 use std::collections::{BinaryHeap, VecDeque};
 
+const MAX_POSTPONE: i32 = 7;
+const MAX_WEIGHT: usize = 1_000_000_000_000_000_000;
 const INF: i32 = 1_000_000_000;
 
 fn read_line<T>() -> Vec<T>
@@ -44,14 +46,8 @@ fn main() {
     let skill_num = params[2];
     let dep_num = params[3];
     let mut tasks = vec![];
-    let mut difficulties = vec![];
-    for i in 0..task_num {
+    for _ in 0..task_num {
         tasks.push(read_line::<i32>());
-        let mut difficulty = 0;
-        for &requirement in tasks[i].iter() {
-            difficulty += requirement;
-        }
-        difficulties.push(difficulty);
     }
     let mut deps = vec![];
     for _ in 0..dep_num {
@@ -71,9 +67,11 @@ fn main() {
     for k in (0..task_num).rev() {
         let i = order[k];
         for &j in adj[i].iter() {
-            weight[i] += weight[j] / 2;
+            weight[i] += weight[j] * 3 / 2;
+            weight[i] = weight[i].min(MAX_WEIGHT);
         }
         weight[i] += adj[i].len();
+        weight[i] = weight[i].min(MAX_WEIGHT);
     }
 
     let mut pq: BinaryHeap<(usize, usize)> = BinaryHeap::new();
@@ -92,21 +90,14 @@ fn main() {
     // Number of jobs a member has been assigned to.
     let mut assigned_times = vec![0usize; member_num];
 
-    // Remaining chances to postpone a job.
-    let mut remaining_postpone_chances = vec![0usize; task_num];
-    for i in 0..task_num {
-        remaining_postpone_chances[i] = if weight[i] < 3 {
-            10
-        } else {
-            5
-        }
-    }
-
-    // Date when the member is supposed to complete the previous job.
-    let mut estimate_free_date = vec![0usize; member_num];
-
     // Number of free members.
     let mut free_num = member_num;
+
+    // Remaining chances to postpone a job.
+    let mut remaining_postpone_chances = vec![MAX_POSTPONE; task_num];
+
+    // Date when the member is supposed to complete the previous job.
+    let mut estimate_free_date = vec![0i32; member_num];
 
     // Current date
     let mut day = 0;
@@ -121,7 +112,6 @@ fn main() {
             free_num += params[0] as usize;
             for &member_idx in params.iter().take(params[0] as usize + 1).skip(1) {
                 freed.push((member_idx - 1) as usize);
-                estimate_free_date[(member_idx - 1) as usize] = day as usize;
             }
         }
 
@@ -153,29 +143,30 @@ fn main() {
             let (_weight, task_idx) = pq.pop().unwrap();
             let mut best_member = member_num;
             let mut best_delta = INF;
+            let mut best_delta_not_free = INF;
             for member_idx in 0..member_num {
-                if assignments[member_idx].0 != task_num && (estimate_free_date[member_idx] > day as usize + remaining_postpone_chances[task_idx] || remaining_postpone_chances[task_idx] == 0) {
-                    continue;
-                }
-
                 let mut delta = 0;
                 for i in 0..skill_num {
                     delta += (tasks[task_idx][i] - estimate_skills[member_idx][i]).max(0);
                 }
-                if delta < best_delta {
-                    best_delta = delta;
-                    best_member = member_idx;
+                if assignments[member_idx].0 == task_num {
+                    if delta < best_delta {
+                        best_delta = delta;
+                        best_member = member_idx;
+                    }
+                } else if remaining_postpone_chances[task_idx] > 0 && day + remaining_postpone_chances[task_idx] >= estimate_free_date[member_idx] {
+                    best_delta_not_free = delta;
                 }
             }
 
-            if ((assigned_times[best_member] >= 1 && best_delta > 80) || assignments[best_member].0 != task_num) && remaining_postpone_chances[task_idx] > 0 {
+            if remaining_postpone_chances[task_idx] > 0 && best_delta_not_free + remaining_postpone_chances[task_idx] < best_delta {
                 remaining_postpone_chances[task_idx] -= 1;
                 postponed.push((weight[task_idx], task_idx));
                 continue;
             }
 
             assignments[best_member] = (task_idx, day);
-            estimate_free_date[best_member] = (day + best_delta) as usize;
+            estimate_free_date[best_member] = day + best_delta;
             assigned_times[best_member] += 1;
             new_assignments.push((best_member, task_idx));
             free_num -= 1;
