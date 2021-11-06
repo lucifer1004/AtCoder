@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rm tmp.txt score.txt
+rm -rf tmp.txt score.txt
 cargo build --release --bin a
 for i in $(seq -f "%04g" 0 999)
 do
