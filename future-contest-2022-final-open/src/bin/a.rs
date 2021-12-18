@@ -22,31 +22,17 @@ const N: usize = 20;
 fn dfs(u: usize, d: usize, adj: &Vec<Vec<Vec<usize>>>, vis: &mut Vec<bool>, ans: &mut Vec<char>) {
     for i in 0..4 {
         let nd = (d + i) % 4;
-        if !adj[u][nd].is_empty() {
+        if !adj[u][nd].is_empty() && !vis[adj[u][nd][0]] {
             let v = adj[u][nd][0];
-            if !vis[v] {
-                ans.push('F');
-                vis[v] = true;
-                dfs(v, nd, adj, vis, ans);
-                for j in 0..2 {
-                    let nnd = (nd + j) % 4;
-                    if adj[v][nnd].is_empty() {
-                        ans.push('R');
-                    } else {
-                        ans.push('r');
-                    }
-                }
-                ans.push('F');
-            }
-
-            let nnd = (nd + 2) % 4;
-            if adj[u][nnd].is_empty() {
-                ans.push('L');
-            } else {
-                ans.push('l');
-            }
+            ans.push('F');
+            vis[v] = true;
+            dfs(v, nd, adj, vis, ans);
+            ans.push('R');
+            ans.push('R');
+            ans.push('F');
+            ans.push('L');
         } else {
-            ans.push('r');
+            ans.push('R');
         }
     }
 }
