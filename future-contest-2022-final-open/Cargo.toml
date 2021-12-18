@@ -1,0 +1,11 @@
+[package]
+name = "future-contest-2022-final-open"
+version = "0.1.0"
+edition = "2021"
+
+# dependencies added to new project
+[dependencies]
+
+[profile.release]
+lto = true
+panic = 'abort'
