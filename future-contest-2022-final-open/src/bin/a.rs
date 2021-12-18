@@ -30,11 +30,53 @@ fn dfs(u: usize, d: usize, adj: &Vec<Vec<Vec<usize>>>, vis: &mut Vec<bool>, ans:
             ans.push('R');
             ans.push('R');
             ans.push('F');
-            ans.push('L');
+            ans.push('R');
+            ans.push('R');
+            ans.push('R');
         } else {
             ans.push('R');
         }
     }
+}
+
+fn compress(code: &Vec<String>, common: String) -> Vec<String> {
+    let mut result = vec![];
+    let n = code.len();
+    let m = common.len();
+    let mut used = vec![false; n];
+    for i in 0..n {
+        if used[i] {
+            continue;
+        }
+
+        if i + m - 1 < n && code[i..=i + m - 1].join("") == common {
+            let mut j = i + m - 1;
+            while j + m < n && code[j + 1..=j + m].join("") == common {
+                j += 4;
+            }
+
+            if j >= i + m {
+                let k = (j + 1 - i) / m;
+                result.push(k.to_string());
+                result.push("(".to_string());
+                for ch in common.chars() {
+                    result.push(ch.to_string());
+                }
+                result.push(")".to_string());
+                for x in i..=j {
+                    used[x] = true;
+                }
+            } else {
+                result.push(code[i].clone());
+                used[i] = true;
+            }
+        } else {
+            result.push(code[i].clone());
+            used[i] = true;
+        }
+    }
+
+    result
 }
 
 fn main() {
@@ -97,6 +139,8 @@ fn main() {
     if counter >= 1 {
         compressed.push(ch.to_string());
     }
+
+    // let compressed = compress(&compressed, "5RF".to_string());
 
     println!("{}", compressed.join(""));
 }
