@@ -19,14 +19,21 @@ fn read_line<T>() -> Vec<T>
 
 const N: usize = 20;
 
-fn dfs(u: usize, d: usize, adj: &Vec<Vec<Vec<usize>>>, vis: &mut Vec<bool>, ans: &mut Vec<char>) {
+fn dfs(u: usize, d: usize, rem: &mut Vec<usize>, adj: &Vec<Vec<Vec<usize>>>, vis: &mut Vec<bool>, ans: &mut Vec<char>) {
     for i in 0..4 {
         let nd = (d + i) % 4;
         if !adj[u][nd].is_empty() && !vis[adj[u][nd][0]] {
             let v = adj[u][nd][0];
             ans.push('F');
             vis[v] = true;
-            dfs(v, nd, adj, vis, ans);
+            rem[0] -= 1;
+            if rem[0] == 0 {
+                return;
+            }
+            dfs(v, nd, rem, adj, vis, ans);
+            if rem[0] == 0 {
+                return;
+            }
             ans.push('R');
             ans.push('R');
             ans.push('F');
@@ -39,7 +46,7 @@ fn dfs(u: usize, d: usize, adj: &Vec<Vec<Vec<usize>>>, vis: &mut Vec<bool>, ans:
     }
 }
 
-fn compress(code: &Vec<String>, common: String) -> Vec<String> {
+fn compress(code: Vec<String>, common: String) -> Vec<String> {
     let mut result = vec![];
     let n = code.len();
     let m = common.len();
@@ -52,7 +59,7 @@ fn compress(code: &Vec<String>, common: String) -> Vec<String> {
         if i + m - 1 < n && code[i..=i + m - 1].join("") == common {
             let mut j = i + m - 1;
             while j + m < n && code[j + 1..=j + m].join("") == common {
-                j += 4;
+                j += m;
             }
 
             if j >= i + m {
@@ -71,6 +78,45 @@ fn compress(code: &Vec<String>, common: String) -> Vec<String> {
                 used[i] = true;
             }
         } else {
+            result.push(code[i].clone());
+            used[i] = true;
+        }
+    }
+
+    result
+}
+
+fn greedy_compress(code: Vec<String>) -> Vec<String> {
+    let mut result = vec![];
+    let n = code.len();
+    let mut used = vec![false; n];
+
+    for i in 0..n {
+        if used[i] {
+            continue;
+        }
+        for m in (4..=(n - i) / 2).rev() {
+            let mut j = i + m - 1;
+            while j + m < n && code[j + 1..=j + m].join("") == code[i..i + m].join("") {
+                j += m;
+            }
+
+            if j >= i + m {
+                let k = (j + 1 - i) / m;
+                result.push(k.to_string());
+                result.push("(".to_string());
+                for x in i..i + m {
+                    result.push(code[x].to_string());
+                }
+                result.push(")".to_string());
+                for x in i..=j {
+                    used[x] = true;
+                }
+                break;
+            }
+        }
+
+        if !used[i] {
             result.push(code[i].clone());
             used[i] = true;
         }
@@ -112,8 +158,9 @@ fn main() {
     let mut ans = vec![];
     let source = si * N + sj;
     let mut vis = vec![false; N * N];
+    let mut rem = vec![N * N - 1];
     vis[source] = true;
-    dfs(source, 0, &adj, &mut vis, &mut ans);
+    dfs(source, 0, &mut rem, &adj, &mut vis, &mut ans);
 
     let mut compressed = vec![];
     let mut counter = 0;
@@ -124,9 +171,11 @@ fn main() {
         } else {
             if counter > 1 {
                 compressed.push(counter.to_string());
-            }
-            if counter >= 1 {
                 compressed.push(ch.to_string());
+            } else {
+                for _ in 0..counter {
+                    compressed.push(ch.to_string());
+                }
             }
             counter = 1;
             ch = c;
@@ -140,7 +189,13 @@ fn main() {
         compressed.push(ch.to_string());
     }
 
-    // let compressed = compress(&compressed, "5RF".to_string());
+    let compressed = compress(compressed, "2RF".to_string());
+    let compressed = compress(compressed, "3RF".to_string());
+    let compressed = compress(compressed, "4RF".to_string());
+    let compressed = compress(compressed, "5RF".to_string());
+    let compressed = compress(compressed, "6RF".to_string());
+    let compressed = compress(compressed, "7RF".to_string());
+    let compressed = compress(compressed, "8RF".to_string());
 
     println!("{}", compressed.join(""));
 }
