@@ -1,4 +1,4 @@
-# AtCoder Beginner Contest 238
+# AtCoder Beginner Contest 240
 
 - [x] A
 - [x] B
@@ -7,4 +7,4 @@
 - [x] E
 - [x] F
 - [x] G:bookmark_tabs:
-- [x] Ex:bookmark_tabs:
+- [ ] Ex
