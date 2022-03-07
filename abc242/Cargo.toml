@@ -1,0 +1,13 @@
+[package]
+name = "abc242"
+version = "0.1.0"
+edition = "2021"
+
+# dependencies added to new project
+[dependencies]
+fixedbitset = "0.2"
+proconio = "0.4"
+
+[profile.release]
+lto = true
+panic = 'abort'
