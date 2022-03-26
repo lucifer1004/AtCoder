@@ -84,26 +84,13 @@ class Solution {
       adj[v].emplace_back(u, c);
     }
 
-    auto dis1 = dijkstra(adj, n);
-    vector<vector<pair<int, int>>> adj2(adj);
-    adj2[n].clear();
-    for (int i = 0; i < n; ++i) {
-      if (popular[i] && a[i] != 0) adj2[n].emplace_back(i, 0);
-    }
-    auto dis2 = dijkstra(adj2, n);
-
+    auto dis = dijkstra(adj, n);
     vector<ll> ans(n);
     for (int i = 0; i < n; ++i) {
-      int from = -1;
-      if (a[i] == 0) {
-        ans[i] = dis2[i][0];
-        from = dis2[i][1];
-      } else {
-        if (dis1[i][1] != INF && a[dis1[i][1]] != a[i])
-          ans[i] = dis1[i][0], from = dis1[i][1];
-        else
-          ans[i] = dis1[i][2], from = dis1[i][3];
-      }
+      if (dis[i][1] != INF && a[dis[i][1]] != a[i])
+        ans[i] = dis[i][0];
+      else
+        ans[i] = dis[i][2];
       if (ans[i] == INF) ans[i] = -1;
     }
     for (ll &ansi : ans) printf("%lld ", ansi);
