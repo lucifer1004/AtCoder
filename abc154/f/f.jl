@@ -19,13 +19,9 @@ function read_params(T::Type)
     return map(x -> parse(T, x), split(line))
 end
 
-function f(r, c)
-    ans = 0
-    for i in 0:c
-        ans = (ans + comb(r + i + 1, i + 1)) % MOD
-    end
-
-    return ans
+# f(r, c) = ∑ᵢⱼC(i + j, i) = ∑ⱼC(r + j + 1, j + 1) = C(r + c + 2, r + 1) - C(r + c + 2, 0)
+@inline function f(r, c)
+    return comb(r + c + 2, r + 1) - 1
 end
 
 @inline function solve()
